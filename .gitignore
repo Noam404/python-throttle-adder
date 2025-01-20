@@ -1,5 +1,6 @@
 # environments
 env/
 
-#builds
+#compiled
 *.pyc
+__pycache__/

@@ -79,27 +79,29 @@ def write(file: str, scope: str, viewName: str, lines: list) -> None:
             viewType = "function"
             break
 
-    if viewType == "": return
+    if viewType == "": 
+        return
 
-    match viewType:
-        case "class":
-            writeImport(file, lines, "rest_framework", "throttling", "UserRateThrottle")
-            writeClassScope(file, scope, viewName, lines)
-        case "function":
+    if viewType == "class":
+        writeImport(file, lines, "rest_framework", "throttling", "UserRateThrottle")
+        writeClassScope(file, scope, viewName, lines)
+    elif viewType == "function":
             writeImport(file, lines, "middleware", "rate_limit", "rate_limit_scope")
             writeFunctionScope(file, scope, viewName, lines)
 
+def handle(method: str, filePath: str, scope: str, viewName: str):
+    fileLines = []
+    with open(filePath, 'r') as file:
+        fileLines = file.readlines()
+        file.close()
 
-arguments = sys.argv[1:] # exclude script path
-#arguments: [type, filePath, scope, viewName]
-fileLines = []
-with open(arguments[1], 'r') as file:
-    fileLines = file.readlines()
-    file.close()
-
-match arguments[0]:
-    case "writeScope":
-        write(arguments[1], arguments[2], arguments[3], fileLines)
+    if method == "write":
+        write(filePath, scope, viewName, fileLines)
         # print(fileLines)
-    case "readFile":
-        print(fileLines)
+    elif method == "read":
+        return str.join(fileLines)
+    
+if __name__ == "__main__":    
+    arguments = sys.argv[1:] # exclude script path
+    #arguments: [type, filePath, scope, viewName]
+    handle(arguments[0], arguments[1], arguments[2], arguments[3])
