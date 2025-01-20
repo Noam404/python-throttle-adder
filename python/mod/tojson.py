@@ -15,8 +15,8 @@ def toJson(relativePath: str, outputPath: str) -> list:
                 "path": "/".join(splitted[:-1]),
                 "viewName": splitted[-1],
                 "status": False,
-                "scope": None,
-                "why": None,
+                "scope": "",
+                "why": "",
             })
     
 
@@ -35,8 +35,8 @@ def readJson(filePath):
     return data
 
 def writeJson(data, filePath):
-    with open(filePath, 'r') as file:
-        file.write(jsonify(data))
+    with open(filePath, 'w') as file:
+        file.write(json.dumps(data))
         file.close()
 
 if __name__ == "__main__":

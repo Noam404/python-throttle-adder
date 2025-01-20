@@ -11,10 +11,12 @@ class Endpoint():
         self.index: int = index
         self.path: str = location
         self.view_name: str = viewName
-        self.why = "",
-        self.scope = "",
-        self.status = False,
         self.database: Database = database
+
+        info = self.database.json[self.index]
+        self.why = info["why"]
+        self.scope = info["scope"]
+        self.status = info["status"]
 
     def getContent(self):
         content = ""
@@ -30,7 +32,7 @@ class Database():
         self.json = readJson(filePath)
         self.active_endpoints = [self.newEndpoint(i) for i in range(5)]
 
-    def update(self, endpoint: Endpoint):
+    def updateDatabase(self, endpoint: Endpoint):
         self.json[endpoint.index]["why"] = endpoint.why
         self.json[endpoint.index]["scope"] = endpoint.scope
 
@@ -45,36 +47,78 @@ class Database():
             index,
             self
         )
-        endpoint.status = info["status"]
-        endpoint.why = info["why"]
-        endpoint.scope = info["scope"]
 
         return endpoint
 
-    def updateInfo(scope="", why=""):
+    def updateEndpoint(self, endpoint: Endpoint, scope="", why=""):
 
-        self.scope = self.scope if scope == "" else scope
-        self.why = self.why if scope == "" else why
+        endpoint.scope = endpoint.scope if scope == "" else scope
+        endpoint.why = endpoint.why if why == "" else why
 
-        self.database.update(self)
+        if endpoint.scope == "x":
+            endpoint.scope = ""
+        
+        if endpoint.scope != "":
+            endpoint.status = True
+        else:
+            endpoint.status = False
 
-def printTable(database: Database):
+        self.updateDatabase(endpoint)
+
+database = Database("database.json")
+inputChar = ' '
+pointer = 0
+
+def printTable(active: list, pointer: int):
     
-    for endpoint in database.active_endpoints:
+    for endpoint in active:
         full_path = f"{endpoint.path}.{endpoint.view_name}"
         print(
             Fore.GREEN if endpoint.status else Fore.RED,
             f"{endpoint.index}{' '*(4 - len(str(endpoint.index)))}",
-            Fore.WHITE, f"|  {endpoint.path}.{endpoint.view_name}{' '*(60 - len(full_path))}|",
-            Fore.BLUE, endpoint.scope, Fore.WHITE
+            Fore.CYAN if endpoint.index == pointer else Fore.WHITE, f"|  {endpoint.path}.{endpoint.view_name}{' '*(60 - len(full_path))}",
+            Fore.WHITE + '|' + endpoint.scope
         ) # don't even try to understand whats going on here its not gonna be changed anyways
         print('-' * 85)
 
-database = Database("database.json")
-inputChar = ' '
+def categorizeScope(endpoint: Endpoint):
+
+    scope = input("Enter Scope: ")
+    why = input("Why? ")
+    endpoint.database.updateEndpoint(endpoint, scope, why)
+
+def selectEndpoint():
+    
+    inputChar = ' '
+    targetIndex = int(input("Enter endpoint index: "))
+    while inputChar != '3':
+        activeEndpoint = next((endpoint for endpoint in database.active_endpoints if endpoint.index == targetIndex), None)
+
+        os.system(clearCommand)
+        if activeEndpoint == None:
+            activeEndpoint = database.newEndpoint(targetIndex)
+        print(
+            Fore.BLUE + activeEndpoint.path + Fore.YELLOW + '.' + activeEndpoint.view_name, 
+            "\n\n" + Fore.BLUE + "Scope:" + Fore.WHITE + activeEndpoint.scope, 
+            Fore.BLUE + "\nWhy:" + Fore.WHITE + activeEndpoint.why +
+            (Fore.GREEN + "\n\nFinished" if activeEndpoint.status else Fore.RED + "\n\nNo Scope"), 
+            Fore.WHITE
+            )       
+        print("\n\nSelect action:\n1 - update endpoint\n2 - open file\n3 - close")
+        inputChar = msvcrt.getch().decode()
+        match inputChar:
+            case '1':
+                categorizeScope(activeEndpoint)
+            case '2':
+                activeEndpoint.getContent()
+
+
 while inputChar != 'x':
     os.system(clearCommand)
-    printTable(database)
-    print("i - Open endpoint\nn - next endpoint")
-
+    printTable(database.active_endpoints, pointer)
+    print("i - Select endpoint    n - Next endpoint   x - exit")
     inputChar = msvcrt.getch().decode()
+
+    match inputChar:
+        case 'i':
+            selectEndpoint()
