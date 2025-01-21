@@ -36,7 +36,7 @@ def readJson(filePath):
 
 def writeJson(data, filePath):
     with open(filePath, 'w') as file:
-        file.write(json.dumps(data))
+        file.write(json.dumps(data, indent=4))
         file.close()
 
 if __name__ == "__main__":
