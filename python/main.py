@@ -5,8 +5,8 @@ from mod.file import handle
 from mod.tojson import readJson, writeJson    
 
 clearCommand = 'cls' if platform.system() == 'Windows' else 'clear'
-
-class Endpoint():
+# ugly code but gets the job done 
+class Endpoint(): 
     def __init__(self, location, viewName, index, database):
         self.index: int = index
         self.path: str = location
@@ -39,7 +39,7 @@ class Database():
 
         writeJson(self.json, self.path)
 
-    def newEndpoint(self, index):
+    def newEndpoint(self, index): # return Endpoint with info from database
         
         info = self.json[index]
         endpoint = Endpoint(
@@ -53,7 +53,7 @@ class Database():
 
     def updateEndpoint(self, endpoint: Endpoint, scope="", why=""):
 
-        endpoint.scope = endpoint.scope if scope == "" else scope
+        endpoint.scope = endpoint.scope if scope == "" else scope # doesnt update if its empty
         endpoint.why = endpoint.why if why == "" else why
 
         if endpoint.scope == "x":
@@ -66,7 +66,8 @@ class Database():
 
         self.updateDatabase(endpoint)
 
-        handle("write", endpoint.path, endpoint.scope, endpoint.view_name)
+        handle("write", endpoint.path, endpoint.scope, endpoint.view_name) # review this!!!
+        # this takes care of the file itself check if it's correct in your situation
 
 database = Database("database.json")
 inputChar = ' '
@@ -81,7 +82,7 @@ def printTable(active: list, pointer: int):
             f"{endpoint.index}{' '*(4 - len(str(endpoint.index)))}",
             Fore.CYAN if endpoint.index == pointer else Fore.WHITE, f"|  {endpoint.path}.{endpoint.view_name}{' '*(60 - len(full_path))}",
             Fore.WHITE + '|' + endpoint.scope
-        ) # don't even try to understand whats going on here its not gonna be changed anyways
+        )
         print('-' * 85)
 
 def categorizeScope(endpoint: Endpoint):
@@ -90,6 +91,10 @@ def categorizeScope(endpoint: Endpoint):
     why = input("Why? ")
     endpoint.database.updateEndpoint(endpoint, scope, why)
 
+def selectEndpoint(index):
+    inputChar = ''
+    while inputChar != '3':
+        os.system(clearCommand)
 def selectEndpoint(index):
     inputChar = ''
     while inputChar != '3':
@@ -107,6 +112,7 @@ def selectEndpoint(index):
             )       
         print("\n\nSelect action:\n1 - update endpoint\n2 - open file\n3 - close")
         inputChar = msvcrt.getch().decode()
+        inputChar = msvcrt.getch().decode()
         match inputChar:
             case '1':
                 categorizeScope(activeEndpoint)
@@ -122,6 +128,7 @@ def changePointer(changeTo):
     return endpoint
 
 endpoint = database.newEndpoint(pointer)
+endpoint = database.newEndpoint(pointer)
 while inputChar != 'x':
     os.system(clearCommand)
     # print(list(range(30, 5)))
@@ -136,8 +143,10 @@ while inputChar != 'x':
         case 'i':
             targetIndex = int(input("Enter endpoint index: "))
             inputChar = selectEndpoint(targetIndex)
+            inputChar = selectEndpoint(targetIndex)
         case 'p':
             pointer = int(input("Change pointer to "))
+            endpoint = changePointer(pointer)
             endpoint = changePointer(pointer)
         case 'n':
             scope = ""
