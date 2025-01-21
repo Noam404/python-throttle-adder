@@ -5,8 +5,8 @@ from mod.file import handle
 from mod.tojson import readJson, writeJson    
 
 clearCommand = 'cls' if platform.system() == 'Windows' else 'clear'
-
-class Endpoint():
+# ugly code but gets the job done 
+class Endpoint(): 
     def __init__(self, location, viewName, index, database):
         self.index: int = index
         self.path: str = location
@@ -39,7 +39,7 @@ class Database():
 
         writeJson(self.json, self.path)
 
-    def newEndpoint(self, index):
+    def newEndpoint(self, index): # return Endpoint with info from database
         
         info = self.json[index]
         endpoint = Endpoint(
@@ -53,7 +53,7 @@ class Database():
 
     def updateEndpoint(self, endpoint: Endpoint, scope="", why=""):
 
-        endpoint.scope = endpoint.scope if scope == "" else scope
+        endpoint.scope = endpoint.scope if scope == "" else scope # doesnt update if its empty
         endpoint.why = endpoint.why if why == "" else why
 
         if endpoint.scope == "x":
@@ -65,6 +65,9 @@ class Database():
             endpoint.status = False
 
         self.updateDatabase(endpoint)
+
+        handle("write", endpoint.path, endpoint.scope, endpoint.view_name) # review this!!!
+        # this takes care of the file itself check if it's correct in your situation
 
 database = Database("database.json")
 inputChar = ' '
@@ -79,7 +82,7 @@ def printTable(active: list, pointer: int):
             f"{endpoint.index}{' '*(4 - len(str(endpoint.index)))}",
             Fore.CYAN if endpoint.index == pointer else Fore.WHITE, f"|  {endpoint.path}.{endpoint.view_name}{' '*(60 - len(full_path))}",
             Fore.WHITE + '|' + endpoint.scope
-        ) # don't even try to understand whats going on here its not gonna be changed anyways
+        )
         print('-' * 85)
 
 def categorizeScope(endpoint: Endpoint):
@@ -88,8 +91,10 @@ def categorizeScope(endpoint: Endpoint):
     why = input("Why? ")
     endpoint.database.updateEndpoint(endpoint, scope, why)
 
-def selectEndpoint(index, bringOuterInput=False, inputChar=' '):
-    
+def selectEndpoint(index):
+    inputChar = ''
+    while inputChar != '3':
+        os.system(clearCommand)
         activeEndpoint = next((endpoint for endpoint in database.active_endpoints if endpoint.index == index), None)
 
         if activeEndpoint == None:
@@ -102,7 +107,7 @@ def selectEndpoint(index, bringOuterInput=False, inputChar=' '):
             Fore.WHITE
             )       
         print("\n\nSelect action:\n1 - update endpoint\n2 - open file\n3 - close")
-        if bringOuterInput == False: inputChar = msvcrt.getch().decode()
+        inputChar = msvcrt.getch().decode()
         match inputChar:
             case '1':
                 categorizeScope(activeEndpoint)
@@ -110,29 +115,45 @@ def selectEndpoint(index, bringOuterInput=False, inputChar=' '):
                 activeEndpoint.getContent()
 
 def changePointer(changeTo):
-    activeEndpoint = next((endpoint for endpoint in database.active_endpoints if endpoint.index == pointer), None)
-    if activeEndpoint == None:
+    endpoint = next((endpoint for endpoint in database.active_endpoints if endpoint.index == pointer), None)
+    if endpoint == None:
         database.active_endpoints = [database.newEndpoint(i) for i in range(int(pointer / 10) * 10, int(pointer / 10) * 10 + 10)]
-        activeEndpoint = next((endpoint for endpoint in database.active_endpoints if endpoint.index == pointer), None)
+        endpoint = next((endpoint for endpoint in database.active_endpoints if endpoint.index == pointer), None)
 
+    return endpoint
+
+endpoint = database.newEndpoint(pointer)
 while inputChar != 'x':
     os.system(clearCommand)
     # print(list(range(30, 5)))
     printTable(database.active_endpoints, pointer)
     print("i - Select endpoint    n - Next endpoint     p - change pointer      x - exit")
+    status = "Finished" if endpoint.scope != "" else "No Scope"
+    print(f"\n\n{endpoint.path}.{endpoint.view_name}\nScope: {endpoint.scope}\nWhy: {endpoint.why}\n{status}")
+
     inputChar = msvcrt.getch().decode()
 
     match inputChar:
         case 'i':
             targetIndex = int(input("Enter endpoint index: "))
-            inputChar = ' '
-            while inputChar != '3':
-                os.system(clearCommand)
-                selectEndpoint(targetIndex)
+            inputChar = selectEndpoint(targetIndex)
         case 'p':
             pointer = int(input("Change pointer to "))
-            changePointer(pointer)
+            endpoint = changePointer(pointer)
         case 'n':
-            pointer += 1
-            changePointer(pointer)
-            selectEndpoint(pointer, True, '1')
+            scope = ""
+            while scope != "exit":    
+                pointer += 1
+                endpoint = changePointer(pointer)
+                # selectEndpoint(pointer)
+                os.system(clearCommand)
+                printTable(database.active_endpoints, pointer)
+                scope = input("To exit, type exit in scope\nFor further commands, type select\n" + Fore.CYAN + "Scope: " + Fore.WHITE)
+                if scope == "exit":
+                    break
+                elif scope == "select":
+                    selectEndpoint(pointer)
+                    continue
+                
+                why = input(Fore.CYAN + "Why? " + Fore.WHITE)
+                endpoint.database.updateEndpoint(endpoint, scope, why)
