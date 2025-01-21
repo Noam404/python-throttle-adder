@@ -1,3 +1,4 @@
+colorama==0.4.6
 jsonify==0.5
 pexpect==4.9.0
 ptyprocess==0.7.0
